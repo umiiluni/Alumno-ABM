@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema Universitario</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <header class="bg-blue-700 text-white p-6 shadow-lg">
+        <h1 class="text-3xl font-bold flex items-center gap-3">
+            <i class="fa-solid fa-graduation-cap"></i>
+            Sistema Universitario
+        </h1>
+        <p class="text-sm mt-2">Gestión de Alumnos, Docentes, Materias y Preceptores</p>
+    </header>
+
+    <main class="p-6 max-w-4xl mx-auto">
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 text-center mb-6">
+            <button onclick="mostrar('alumnos')" class="bg-white p-4 shadow-md rounded-xl hover:bg-blue-100 transition">
+                <i class="fa-solid fa-user text-2xl mb-2 text-blue-600"></i>
+                <div class="font-semibold">Alumnos</div>
+            </button>
+            <button onclick="mostrar('docentes')" class="bg-white p-4 shadow-md rounded-xl hover:bg-blue-100 transition">
+                <i class="fa-solid fa-chalkboard-teacher text-2xl mb-2 text-green-600"></i>
+                <div class="font-semibold">Docentes</div>
+            </button>
+            <button onclick="mostrar('materias')" class="bg-white p-4 shadow-md rounded-xl hover:bg-blue-100 transition">
+                <i class="fa-solid fa-book text-2xl mb-2 text-yellow-600"></i>
+                <div class="font-semibold">Materias</div>
+            </button>
+            <button onclick="mostrar('preceptores')" class="bg-white p-4 shadow-md rounded-xl hover:bg-blue-100 transition">
+                <i class="fa-solid fa-users text-2xl mb-2 text-purple-600"></i>
+                <div class="font-semibold">Preceptores</div>
+            </button>
+        </div>
+
+        <div id="formulario" class="bg-white p-6 shadow-md rounded-xl mb-6">
+            <!-- Aquí se cargará el formulario dinámicamente -->
+        </div>
+
+        <div id="tabla" class="bg-white p-6 shadow-md rounded-xl">
+            <!-- Aquí se mostrará la tabla con los datos -->
+        </div>
+    </main>
+
+    <script>
+        function mostrar(tipo) {
+            cargar(tipo);
+        }
+
+        function cargar(tipo) {
+            fetch(`http://127.0.0.1:5000/${tipo}`)
+                .then(res => res.json())
+                .then(datos => renderTabla(tipo, datos));
+        }
+
+        const campos = {
+            alumnos: ["nombre", "apellido", "dni", "email"],
+            docentes: ["nombre", "apellido", "materia"],
+            materias: ["nombre", "codigo"],
+            preceptores: ["nombre", "turno"]
+        };
+
+        let tipoActual = '';
+        let editandoId = null;
+
+        function renderFormulario(data = {}) {
+            const camposHTML = campos[tipoActual].map(campo => `
+                <div class="mb-4">
+                    <label class="block capitalize mb-1">${campo}</label>
+                    <input class="w-full p-2 border rounded" name="${campo}" value="${data[campo] || ''}">
+                </div>
+            `).join('');
+
+            formulario.innerHTML = `
+                <form onsubmit="guardar(event)" class="space-y-4">
+                    ${camposHTML}
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" type="submit">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>Guardar
+                    </button>
+                </form>
+            `;
+        }
+
+        function guardar(e) {
+            e.preventDefault();
+            const datos = Object.fromEntries(new FormData(e.target));
+            const metodo = editandoId ? "PUT" : "POST";
+            const url = editandoId ? `http://127.0.0.1:5000/${tipoActual}/${editandoId}` : `http://127.0.0.1:5000/${tipoActual}`;
+            fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            }).then(() => {
+                cargar(tipoActual);
+                renderFormulario();
+                editandoId = null;
+            });
+        }
+
+        function eliminar(id) {
+            fetch(`http://127.0.0.1:5000/${tipoActual}/${id}`, { method: "DELETE" })
+                .then(() => cargar(tipoActual));
+        }
+
+        function editar(id) {
+            fetch(`http://127.0.0.1:5000/${tipoActual}/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    renderFormulario(data);
+                    editandoId = id;
+                });
+        }
+
+        function renderTabla(tipo, datos) {
+            tipoActual = tipo;
+            renderFormulario();
+            const headers = campos[tipo].map(c => `<th class="text-left p-2 capitalize">${c}</th>`).join('');
+            const filas = datos.map(d => `
+                <tr class="border-t">
+                    ${campos[tipo].map(c => `<td class="p-2">${d[c]}</td>`).join('')}
+                    <td class="p-2 space-x-2">
+                        <button onclick="editar(${d.id})" class="text-yellow-600 hover:underline">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="eliminar(${d.id})" class="text-red-600 hover:underline">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            tabla.innerHTML = `
+                <table class="w-full table-auto">
+                    <thead class="bg-gray-200">
+                        <tr>${headers}<th class="p-2">Acciones</th></tr>
+                    </thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            `;
+        }
+    </script>
+
+</body>
+</html>
