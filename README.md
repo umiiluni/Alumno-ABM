@@ -1,14 +1,21 @@
 🧾 Historia de Usuario: Control de Información de Alumnos
-ID: US-001
+
 Rol: Estudiante
+
 Funcionalidad deseada: Control y organización de la información de los alumnos
+
 Objetivo/beneficio: Estar más organizada y acceder fácilmente a los datos de los alumnos desde una interfaz clara y categorizada
 
+
 🗂️ Descripción
+
 Como estudiante para poder estar más organizada quiero tener el control de la información de los alumnos, accediendo desde un sistema web con botones visuales de navegación (Alumnos, Docentes, Materias, Preceptores), y un formulario que me permita cargar datos relevantes como nombre, apellido, DNI y correo electrónico.
 
+
 ✅ Criterios de Aceptación
+
 El sistema muestra un menú principal con tarjetas/botones visuales para navegar entre:
+
 
 Alumnos
 
